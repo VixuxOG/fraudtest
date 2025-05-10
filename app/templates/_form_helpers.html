@@ -1,0 +1,38 @@
+{# app/templates/_form_helpers.html - Jinja2 macro for rendering form fields #}
+
+{% macro render_field(field, placeholder='', type=None, icon_class=None) %}
+    <div class="mb-3">
+        {{ field.label(class='form-label') }}
+        <div class="input-group">
+            {% if icon_class %}
+                <span class="input-group-text"><i class="{{ icon_class }}"></i></span>
+            {% endif %}
+            {# Determine input type - default to field's type or override #}
+            {% set field_type = type if type else field.type | lower | replace('field', '') %}
+            {# Special handling for different field types if needed #}
+            {% if field_type == 'password' %}
+                {{ field(class='form-control' + (' is-invalid' if field.errors else ''), placeholder=placeholder, type='password') }}
+            {% elif field_type == 'boolean' %}
+                 <div class="form-check mt-2 ms-2"> {# Adjust positioning for checkboxes #}
+                    {{ field(class='form-check-input' + (' is-invalid' if field.errors else '')) }}
+                    {# Label is often handled separately for checkboxes, but can be included #}
+                </div>
+            {% elif field_type == 'submit' %}
+                 {{ field(class='btn btn-primary w-100') }} {# Example styling for submit #}
+            {% else %}
+                 {{ field(class='form-control' + (' is-invalid' if field.errors else ''), placeholder=placeholder, type=field_type) }}
+            {% endif %}
+
+            {% if field.errors %}
+                <div class="invalid-feedback d-block"> {# Ensure feedback is always visible block #}
+                    {% for error in field.errors %}
+                        <span>{{ error }}</span><br>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div> {# End input-group #}
+        {% if field.description %}
+             <div class="form-text text-muted">{{ field.description }}</div>
+        {% endif %}
+    </div>
+{% endmacro %}

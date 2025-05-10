@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}UPI Fraud Detection{% endblock %}</title>
+    <!-- Favicon Placeholder -->
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon"> <!-- Add a favicon -->
+
+    <!-- Vendor CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    {% block head_extra %}{% endblock %} <!-- For page-specific head elements like Chart.js CSS -->
+</head>
+<body>
+    <header>
+         <nav class="navbar navbar-expand-lg navbar-dark fixed-top app-navbar">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{{ url_for('main.index' if current_user.is_authenticated else 'auth.login') }}">
+                   <i class="fas fa-shield-alt me-2"></i> <!-- Icon -->
+                   Group 17 - UPI Fraud Detection
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        {% if current_user.is_authenticated %}
+                            <li class="nav-item">
+                                <span class="navbar-text me-3">
+                                    Welcome, {{ current_user.username }}
+                                </span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt me-1"></i>Logout</a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link {{ 'active' if request.endpoint == 'auth.login' else '' }}" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt me-1"></i>Login</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ 'active' if request.endpoint == 'auth.register' else '' }}" href="{{ url_for('auth.register') }}"><i class="fas fa-user-plus me-1"></i>Register</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main" class="app-main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="container flash-container">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %} <!-- Main content area -->
+    </main>
+
+    <footer class="app-footer text-center py-3">
+        <div class="container">
+            <span class="text-muted">© {{ now().year }} Group 17 - CNN for UPI Fraud Detection. All Rights Reserved.</span>
+        </div>
+    </footer>
+
+    <!-- Vendor JS -->
+    <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+
+    <!-- Custom JS -->
+    {% block scripts_extra %}{% endblock %} <!-- For page-specific scripts like Chart.js -->
+</body>
+</html>
