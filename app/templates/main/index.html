@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Transactions - UPI Fraud Detection{% endblock %}
+
+{% block content %}
+<div class="container upload-container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="upload-card shadow">
+                 <i class="fas fa-file-csv fa-3x mb-4" style="color: var(--accent-color);"></i>
+                 <h2>Upload Transaction Data</h2>
+                 <p class="lead">Please upload your UPI Transaction data as a CSV file to identify potentially fraudulent activities.</p>
+
+                 {% if service_unavailable %}
+                     <div class="alert alert-danger" role="alert">
+                       <i class="fas fa-exclamation-triangle me-2"></i> The fraud detection service is currently unavailable. Please try again later or contact support.
+                     </div>
+                 {% else %}
+                     <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.index') }}">
+                        <div class="mb-4">
+                            <label for="file" class="form-label visually-hidden">Select CSV File</label>
+                            <input class="form-control form-control-lg" type="file" id="file" name="file" accept=".csv" required>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>Analyze Transactions
+                            </button>
+                        </div>
+                    </form>
+                 {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
