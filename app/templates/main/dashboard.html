@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - UPI Fraud Detection{% endblock %}
+
+{% block head_extra %}
+    <!-- Add any CSS specific to charts if needed -->
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid dashboard-container">
+    <h1 class="text-center mb-4" style="color: var(--light-text);">Analysis Dashboard</h1>
+    <p class="text-center text-muted mb-5">Results for file: <strong>{{ filename }}</strong></p>
+
+    <!-- Summary Cards Row -->
+    {% if summary %}
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="summary-card">
+                 <div class="icon"><i class="fas fa-list-ol"></i></div>
+                 <div class="content">
+                     <h5>Total Transactions</h5>
+                     <div class="value">{{ summary.total_transactions | default('N/A') }}</div>
+                 </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="summary-card">
+                 <div class="icon danger"><i class="fas fa-exclamation-triangle"></i></div>
+                 <div class="content">
+                     <h5>Fraud Detected</h5>
+                     <div class="value danger">{{ summary.total_fraud | default('N/A') }}</div>
+                 </div>
+            </div>
+        </div>
+         <div class="col-xl-3 col-md-6 mb-4">
+            <div class="summary-card">
+                 <div class="icon danger"><i class="fas fa-percentage"></i></div>
+                 <div class="content">
+                     <h5>Fraud Rate</h5>
+                     <div class="value danger">{{ summary.fraud_rate_percent | default('N/A') }}%</div>
+                 </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="summary-card">
+                 <div class="icon danger"><i class="fas fa-rupee-sign"></i></div> <!-- Adjust currency icon if needed -->
+                 <div class="content">
+                     <h5>Total Fraud Amount</h5>
+                     {% if summary.fraud_amount_stats and summary.fraud_amount_stats.sum is not none %}
+                        <div class="value danger">₹{{ summary.fraud_amount_stats.sum | round(2) }}</div>
+                     {% else %}
+                         <div class="value danger">N/A</div>
+                     {% endif %}
+                 </div>
+            </div>
+        </div>
+    </div><!-- End Summary Row -->
+
+    <!-- Charts Row -->
+    {% if summary.total_fraud > 0 %}
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+             <div class="chart-card">
+                <h5>Fraud by Merchant Category</h5>
+                {% if summary.fraud_by_category %}
+                    <canvas id="categoryChart"></canvas>
+                {% else %}
+                    <p class="text-center text-muted">Category data not available.</p>
+                {% endif %}
+             </div>
+        </div>
+         <div class="col-lg-6 mb-4">
+             <div class="chart-card">
+                <h5>Fraud by Hour of Day</h5>
+                 {% if summary.fraud_by_hour %}
+                    <canvas id="hourlyChart"></canvas>
+                {% else %}
+                     <p class="text-center text-muted">Hourly data not available.</p>
+                {% endif %}
+             </div>
+        </div>
+    </div><!-- End Charts Row -->
+    {% endif %} {# End check if fraud > 0 for charts #}
+
+    {% endif %} {# End check if summary exists #}
+
+
+    <!-- Fraudulent Transactions Table -->
+    {% if fraudulent_transactions %}
+    <div class="row">
+        <div class="col-12">
+            <div class="table-container">
+                <h4 class="text-danger"><i class="fas fa-table me-2"></i>Detected Fraudulent Transactions ({{ summary.total_fraud }})</h4>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover"> <!-- Removed striped/bordered for cleaner dark look -->
+                        <thead>
+                            <tr>
+                                {% if fraudulent_transactions[0] %}
+                                    {% for key in fraudulent_transactions[0].keys() %}
+                                        <th>{{ key | replace('_', ' ') | title }}</th>
+                                    {% endfor %}
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in fraudulent_transactions %}
+                            <tr>
+                                 {% for key, value in transaction.items() %}
+                                     {# Example of highlighting specific columns #}
+                                     {% if key == 'is_fraud_prediction' %}
+                                         <td class="fraud-highlight">{{ value }}</td>
+                                     {% elif key == 'fraud_probability' %}
+                                         <td class="fraud-highlight">{{ value | round(4) }}</td>
+                                     {% elif key == 'amount' %}
+                                          <td>₹{{ value | round(2) }}</td> <!-- Format amount -->
+                                     {% else %}
+                                         <td>{{ value }}</td>
+                                     {% endif %}
+                                 {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% elif summary and summary.total_fraud == 0 %}
+        <div class="alert alert-success text-center" role="alert" style="background-color: rgba(100, 255, 218, 0.1); border-color: var(--accent-color); color: var(--accent-color);">
+          <h4 class="alert-heading"><i class="fas fa-check-circle me-2"></i>Analysis Complete</h4>
+          No fraudulent transactions were detected based on the current model and threshold ({{ config.PREDICTION_THRESHOLD }}).
+        </div>
+    {% endif %}
+
+     <div class="text-center mt-5">
+         <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary" style="border-color: var(--medium-text); color: var(--medium-text);">
+             <i class="fas fa-arrow-left me-2"></i>Analyze Another File
+         </a>
+    </div>
+
+</div> <!-- End Dashboard Container -->
+{% endblock %}
+
+
+{% block scripts_extra %}
+    <!-- Chart.js -->
+    <script src="{{ url_for('static', filename='vendor/chartjs/chart.min.js') }}"></script>
+    <!-- Custom Chart Script -->
+    <script>
+        // Pass data from Flask/Jinja to JavaScript for charts
+        const categoryLabels = {{ summary.category_labels | default([]) | tojson }};
+        const categoryData = {{ summary.category_data | default([]) | tojson }};
+        const hourlyLabels = {{ summary.hour_labels | default([]) | tojson }};
+        const hourlyData = {{ summary.hour_data | default([]) | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='js/dashboard_charts.js') }}"></script>
+{% endblock %}
